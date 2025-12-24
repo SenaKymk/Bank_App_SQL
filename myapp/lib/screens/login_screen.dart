@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../services/api_service.dart';
 import 'admin/admin_dashboard.dart';
 import 'customer/customer_dashboard.dart';
@@ -50,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (role == 'admin') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => AdminDashboard(adminId: id)),
+            MaterialPageRoute(builder: (_) => AdminDashboard(userId: id)),
           );
         } else if (role == 'customer') {
           Navigator.pushReplacement(

@@ -47,12 +47,13 @@ class CustomerActivity(models.Model):
 
 
 class CustomerChurnLabel(models.Model):
-    cust_id = models.IntegerField()
+    cust_id = models.IntegerField(primary_key=True)
     ref_date = models.DateField()
     churn = models.IntegerField()
 
     class Meta:
-        db_table = 'customer_churn_label'
+        db_table = "customer_churn_label"
+
 
 
 class CustomerProfile(models.Model):
@@ -70,7 +71,7 @@ class CustomerProfile(models.Model):
 
 
 class CustomerTimeSeriesSummary(models.Model):
-    cust_id = models.IntegerField()
+    cust_id = models.IntegerField(primary_key=True)
     ref_date = models.DateField()
 
     mobile_eft_all_cnt_trend = models.FloatField()
@@ -82,14 +83,12 @@ class CustomerTimeSeriesSummary(models.Model):
     active_product_category_nbr_last = models.IntegerField()
     mobile_to_card_ratio_amt = models.FloatField()
 
-    # ---- CORRECTED FIELDS ----
     mobile_eft_all_cnt_mean = models.FloatField()
     active_product_category_nbr_mean = models.FloatField()
-    
-    mobile_eft_all_amt_mean_all = models.FloatField()        # FIXED
-    cc_transaction_all_amt_mean_all = models.FloatField()    # FIXED
 
-    # 3-month metrics
+    mobile_eft_all_amt_mean_all = models.FloatField()
+    cc_transaction_all_amt_mean_all = models.FloatField()
+
     mobile_eft_all_cnt_trend_3m = models.FloatField()
     cc_transaction_all_cnt_trend_3m = models.FloatField()
     mobile_eft_all_cnt_mean_3m = models.FloatField()
@@ -100,4 +99,5 @@ class CustomerTimeSeriesSummary(models.Model):
 
     class Meta:
         db_table = 'customer_time_series_summary'
+
 

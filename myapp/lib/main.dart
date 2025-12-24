@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
+import 'screens/admin/admin_logs.dart'; // BUNU EKLE
+import 'screens/admin/admin_dashboard.dart'; // Eğer kullanıyorsan bunu da ekle
+import 'screens/admin/admin_user_detail.dart'; // bunu oluşturacağız
+import 'screens/admin/prediction_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,6 +18,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: "Bank Account",
       theme: ThemeData(primarySwatch: Colors.blue),
+
+      routes: {
+        "/admin_logs": (context) => const AdminLogsScreen(),
+        "/admin_user_detail": (context) => const AdminUserDetailScreen(),
+        "/admin_prediction": (context) => const AdminPredictionScreen(),
+      },
+
       home: const LoginScreen(),
     );
   }

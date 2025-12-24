@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Flutter / Dart
+build/
+.dart_tool/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Model dosyaları (opsiyonel)
+*.cbm
