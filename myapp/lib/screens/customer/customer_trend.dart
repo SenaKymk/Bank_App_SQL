@@ -3,507 +3,182 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-/// CustomerTrendScreen - Müşteri Trend Analizi Ekranı
-/// Backend'den iki API çağrısı yapar:
-/// 1. /api/customer_trend/<user_id>/ - Özet değerler
-/// 2. /api/customer_monthly_timeseries/<user_id>/ - Aylık zaman serisi verisi
 class CustomerTrendScreen extends StatefulWidget {
   final int userId;
-
-  const CustomerTrendScreen({Key? key, required this.userId}) : super(key: key);
+  const CustomerTrendScreen({super.key, required this.userId});
 
   @override
   State<CustomerTrendScreen> createState() => _CustomerTrendScreenState();
 }
 
 class _CustomerTrendScreenState extends State<CustomerTrendScreen> {
-  bool isLoading = true;
-  String? errorMessage;
+  bool loading = true;
+  String? error;
 
-  // API 1: Trend Summary Data
-  Map<String, dynamic> trendSummary = {};
+  Map<String, dynamic> summary = {};
+  List<Map<String, dynamic>> monthly = [];
 
-  // API 2: Monthly Timeseries Data
-  List<Map<String, dynamic>> monthlyData = [];
+  double d(v) =>
+      v == null ? 0 : (v is int ? v.toDouble() : (v as num).toDouble());
+  int i(v) => v == null ? 0 : (v is double ? v.toInt() : v as int);
 
   @override
   void initState() {
     super.initState();
-    loadData();
+    loadAll();
   }
 
-  /// Güvenli double dönüşümü - null veya geçersiz değerleri 0.0 yapar
-  double safeDouble(dynamic value) {
-    if (value == null) return 0.0;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
-  }
-
-  /// Güvenli int dönüşümü
-  int safeInt(dynamic value) {
-    if (value == null) return 0;
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    if (value is String) return int.tryParse(value) ?? 0;
-    return 0;
-  }
-
-  /// Her iki API'yi sırayla çağırır
-  Future<void> loadData() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
-
+  Future<void> loadAll() async {
     try {
-      // API 1: Trend Summary
-      await loadTrendSummary();
+      final res1 = await http.get(
+        Uri.parse("http://10.0.2.2:8000/api/customer_trend/${widget.userId}/"),
+      );
+      final res2 = await http.get(
+        Uri.parse(
+          "http://10.0.2.2:8000/api/customer_monthly_timeseries/${widget.userId}/",
+        ),
+      );
 
-      // API 2: Monthly Timeseries
-      await loadMonthlyTimeseries();
+      if (res1.statusCode != 200 || res2.statusCode != 200) {
+        throw "Veri alınamadı";
+      }
 
-      setState(() {
-        isLoading = false;
-      });
+      summary = json.decode(res1.body);
+      monthly = List<Map<String, dynamic>>.from(json.decode(res2.body));
+
+      setState(() => loading = false);
     } catch (e) {
       setState(() {
-        isLoading = false;
-        errorMessage = 'Veri yüklenirken hata oluştu: $e';
+        error = e.toString();
+        loading = false;
       });
     }
   }
 
-  /// Trend özet verisini çeker
-  Future<void> loadTrendSummary() async {
-    final url = 'http://10.0.2.2:8000/api/customer_trend/<user_id>/';
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      trendSummary = json.decode(response.body);
-    } else {
-      throw Exception('Trend verisi alınamadı: ${response.statusCode}');
-    }
-  }
-
-  /// Aylık zaman serisi verisini çeker
-  Future<void> loadMonthlyTimeseries() async {
-    final url =
-        'http://10.0.2.2:8000/api/customer_monthly_timeseries/${widget.userId}/';
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      monthlyData = data.map((e) => e as Map<String, dynamic>).toList();
-    } else {
-      throw Exception('Aylık veri alınamadı: ${response.statusCode}');
-    }
-  }
+  // ---------------- UI ----------------
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Müşteri Trend Analizi'), elevation: 0),
-      body: isLoading
+      backgroundColor: const Color(0xfff4f6fb),
+      body: loading
           ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      errorMessage!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: loadData,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar Dene'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInfoCards(),
-                  const SizedBox(height: 24),
-                  _buildRatioPieChart(),
-                  const SizedBox(height: 24),
-                  _buildMonthlyLineChart(),
-                  const SizedBox(height: 24),
-                  _buildTrendSummaryCards(),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-    );
-  }
-
-  /// Bilgi kartları (Ay ve Ürün sayısı)
-  Widget _buildInfoCards() {
-    final monthsInactive = safeInt(trendSummary['months_inactive']);
-    final productLast = safeInt(trendSummary['product_last']);
-
-    return Row(
-      children: [
-        Expanded(
-          child: Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.calendar_today,
-                    color: Colors.orange,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Son işlemden bu yana geçen ay',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$monthsInactive',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.shopping_bag, color: Colors.green, size: 32),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Son ürün kullanım sayısı',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$productLast',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// EFT / Kart Oranı - Pie Chart
-  Widget _buildRatioPieChart() {
-    final ratio = safeDouble(trendSummary['ratio']);
-    final eftValue = ratio.clamp(0.0, 1.0);
-    final cardValue = 1.0 - eftValue;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'EFT / Kart Oranı',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 250,
-              child: PieChart(
-                PieChartData(
-                  sections: [
-                    PieChartSectionData(
-                      value: eftValue * 100,
-                      title: 'EFT\n${(eftValue * 100).toStringAsFixed(1)}%',
-                      color: Colors.blue,
-                      radius: 100,
-                      titleStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    PieChartSectionData(
-                      value: cardValue * 100,
-                      title: 'Kart\n${(cardValue * 100).toStringAsFixed(1)}%',
-                      color: Colors.red,
-                      radius: 100,
-                      titleStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 40,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Aylık EFT / Kart İşlem Sayıları - Line Chart (GERÇEK VERİ)
-  Widget _buildMonthlyLineChart() {
-    if (monthlyData.isEmpty) {
-      return Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Center(child: Text('Aylık veri bulunamadı')),
-        ),
-      );
-    }
-
-    // X ekseni için ay etiketleri
-    final months = monthlyData.map((e) => e['month'].toString()).toList();
-
-    // EFT ve Kart sayıları
-    final eftSpots = <FlSpot>[];
-    final cardSpots = <FlSpot>[];
-
-    for (int i = 0; i < monthlyData.length; i++) {
-      final eftCount = safeDouble(monthlyData[i]['eft_cnt']);
-      final cardCount = safeDouble(monthlyData[i]['card_cnt']);
-      eftSpots.add(FlSpot(i.toDouble(), eftCount));
-      cardSpots.add(FlSpot(i.toDouble(), cardCount));
-    }
-
-    // Y ekseni için maksimum değer
-    double maxY = 0;
-    for (var spot in [...eftSpots, ...cardSpots]) {
-      if (spot.y > maxY) maxY = spot.y;
-    }
-    maxY = maxY * 1.2; // %20 üst boşluk
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Aylık EFT / Kart İşlem Sayıları',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
+          : error != null
+          ? Center(child: Text(error!))
+          : Column(
               children: [
-                Container(width: 16, height: 3, color: Colors.blue),
-                const SizedBox(width: 8),
-                const Text('EFT', style: TextStyle(fontSize: 12)),
-                const SizedBox(width: 24),
-                Container(width: 16, height: 3, color: Colors.red),
-                const SizedBox(width: 8),
-                const Text('Kart', style: TextStyle(fontSize: 12)),
+                _header(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _summaryText(),
+                        const SizedBox(height: 20),
+                        _trendCards(),
+                        const SizedBox(height: 30),
+                        _ratioChart(),
+                        const SizedBox(height: 30),
+                        _monthlyChart(),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 250,
-              child: LineChart(
-                LineChartData(
-                  minY: 0,
-                  maxY: maxY,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: Colors.grey.withOpacity(0.2),
-                        strokeWidth: 1,
-                      );
-                    },
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            value.toInt().toString(),
-                            style: const TextStyle(fontSize: 10),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 30,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < months.length) {
-                            // Sadece bazı ayları göster (çok fazla ay varsa)
-                            if (months.length > 12 && index % 2 != 0) {
-                              return const SizedBox.shrink();
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                months[index],
-                                style: const TextStyle(fontSize: 9),
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      ),
-                    ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      left: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                  ),
-                  lineBarsData: [
-                    // EFT Line (Mavi)
-                    LineChartBarData(
-                      spots: eftSpots,
-                      isCurved: true,
-                      color: Colors.blue,
-                      barWidth: 3,
-                      dotData: FlDotData(show: true),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Colors.blue.withOpacity(0.1),
-                      ),
-                    ),
-                    // Kart Line (Kırmızı)
-                    LineChartBarData(
-                      spots: cardSpots,
-                      isCurved: true,
-                      color: Colors.red,
-                      barWidth: 3,
-                      dotData: FlDotData(show: true),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Colors.red.withOpacity(0.1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    );
+  }
+
+  // ---------------- HEADER ----------------
+
+  Widget _header() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xff6A11CB), Color(0xff2575FC)],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            "Trend Analizi",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------- TEXT SUMMARY ----------------
+
+  Widget _summaryText() {
+    final months = i(summary["months_since_last_txn"]);
+    final products = i(summary["active_product_category_nbr_last"]);
+    final ratio = d(summary["mobile_to_card_ratio_amt"]) * 100;
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Özet",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text("• Son işlemden bu yana $months ay geçti."),
+            Text("• Aktif ürün sayısı: $products"),
+            Text("• İşlemlerin %${ratio.toStringAsFixed(1)}’i EFT üzerinden."),
           ],
         ),
       ),
     );
   }
 
-  /// Trend özet kartları (1 aylık ve 3 aylık trendler)
-  Widget _buildTrendSummaryCards() {
-    final mobileEftTrend = safeInt(trendSummary['mobile_eft_trend']);
-    final ccCntTrend = safeInt(trendSummary['cc_cnt_trend']);
-    final mobileTrend3m = safeInt(trendSummary['mobile_trend_3m']);
-    final ccTrend3m = safeInt(trendSummary['cc_trend_3m']);
+  // ---------------- TREND CARDS ----------------
 
+  Widget _trendCards() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Trend Özeti',
+          "Trend Değişimi",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 16),
-        Row(
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
-            Expanded(
-              child: _buildTrendCard(
-                'EFT Trendi (1 Ay)',
-                mobileEftTrend,
-                Colors.blue,
-                Icons.trending_up,
-              ),
+            _trendCard("EFT (1 Ay)", d(summary["mobile_eft_all_cnt_trend"])),
+            _trendCard(
+              "Kart (1 Ay)",
+              d(summary["cc_transaction_all_cnt_trend"]),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildTrendCard(
-                'Kart Trendi (1 Ay)',
-                ccCntTrend,
-                Colors.red,
-                Icons.credit_card,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildTrendCard(
-                'EFT Trendi (3 Ay)',
-                mobileTrend3m,
-                Colors.green,
-                Icons.show_chart,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildTrendCard(
-                'Kart Trendi (3 Ay)',
-                ccTrend3m,
-                Colors.orange,
-                Icons.analytics,
-              ),
+            _trendCard("EFT (3 Ay)", d(summary["mobile_eft_all_cnt_trend_3m"])),
+            _trendCard(
+              "Kart (3 Ay)",
+              d(summary["cc_transaction_all_cnt_trend_3m"]),
             ),
           ],
         ),
@@ -511,39 +186,133 @@ class _CustomerTrendScreenState extends State<CustomerTrendScreen> {
     );
   }
 
-  /// Tek bir trend kartı oluşturur
-  Widget _buildTrendCard(String title, int value, Color color, IconData icon) {
-    final isPositive = value >= 0;
-    final trendIcon = isPositive ? Icons.arrow_upward : Icons.arrow_downward;
-    final trendColor = isPositive ? Colors.green : Colors.red;
+  Widget _trendCard(String title, double v) {
+    final up = v > 0;
+    final icon = up ? Icons.trending_up : Icons.trending_down;
+    final color = up ? Colors.green : Colors.red;
+    final text = v == 0
+        ? "Sabit"
+        : up
+        ? "Artış Eğiliminde"
+        : "Azalış Eğiliminde";
 
     return Card(
-      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+            Icon(icon, color: color),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  value.toString(),
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(text, style: TextStyle(color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------- PIE CHART ----------------
+
+  Widget _ratioChart() {
+    final eft = d(summary["mobile_to_card_ratio_amt"]).clamp(0, 1);
+    final card = 1 - eft;
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text(
+              "EFT / Kart Oranı",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 220,
+              child: PieChart(
+                PieChartData(
+                  centerSpaceRadius: 40,
+                  sections: [
+                    PieChartSectionData(
+                      value: eft * 100,
+                      color: Colors.blue,
+                      title: "EFT\n${(eft * 100).toStringAsFixed(1)}%",
+                      titleStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    PieChartSectionData(
+                      value: card * 100,
+                      color: Colors.orange,
+                      title: "Kart\n${(card * 100).toStringAsFixed(1)}%",
+                      titleStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Icon(trendIcon, color: trendColor, size: 20),
-              ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------- MONTHLY LINE CHART ----------------
+
+  Widget _monthlyChart() {
+    if (monthly.isEmpty) {
+      return const Text("Aylık veri yok");
+    }
+
+    final eft = <FlSpot>[];
+    final card = <FlSpot>[];
+
+    for (int i = 0; i < monthly.length; i++) {
+      eft.add(FlSpot(i.toDouble(), d(monthly[i]["eft_cnt"])));
+      card.add(FlSpot(i.toDouble(), d(monthly[i]["card_cnt"])));
+    }
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Aylık İşlem Sayıları (EFT vs Kart)",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 240,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: eft,
+                      color: Colors.blue,
+                      isCurved: true,
+                      barWidth: 3,
+                    ),
+                    LineChartBarData(
+                      spots: card,
+                      color: Colors.red,
+                      isCurved: true,
+                      barWidth: 3,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

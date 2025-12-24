@@ -37,16 +37,26 @@ class _AdminLogsScreenState extends State<AdminLogsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xfff0f2f5),
       appBar: AppBar(
         title: const Text("Admin Log Kayıtları"),
-        backgroundColor: Colors.blueAccent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xff2196F3), Color(0xff21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : errorMsg != null
           ? Center(child: Text(errorMsg!))
           : ListView.builder(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               itemCount: logs.length,
               itemBuilder: (_, index) => _buildLogCard(logs[index]),
             ),
@@ -56,30 +66,45 @@ class _AdminLogsScreenState extends State<AdminLogsScreen> {
   Widget _buildLogCard(dynamic log) {
     final meta = _actionMeta(log["action"]);
 
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
       child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
+          radius: 22,
           backgroundColor: meta["color"],
           child: Icon(meta["icon"], color: Colors.white),
         ),
         title: Text(
           meta["label"],
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(log["description"] ?? "-"),
-            const SizedBox(height: 4),
-            Text(
-              log["created_at"] ?? "",
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(log["description"] ?? "-"),
+              const SizedBox(height: 6),
+              Text(
+                log["created_at"] ?? "",
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
         ),
+        trailing: const Icon(Icons.chevron_right),
         onTap: () => _showDetail(log),
       ),
     );
@@ -88,26 +113,47 @@ class _AdminLogsScreenState extends State<AdminLogsScreen> {
   void _showDetail(dynamic log) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Action: ${log["action"]}"),
-            Text("Admin ID: ${log["admin_user_id"]}"),
-            Text("Table: ${log["table_name"]}"),
-            Text("Row PK: ${log["row_pk"]}"),
-            const SizedBox(height: 8),
-            Text("Description:\n${log["description"]}"),
-            const SizedBox(height: 8),
-            Text("Tarih: ${log["created_at"]}"),
+            const Text(
+              "Log Detayı",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(height: 24),
+            _detailRow("Action", log["action"]),
+            _detailRow("Admin ID", log["admin_user_id"]),
+            _detailRow("Tablo", log["table_name"]),
+            _detailRow("Row PK", log["row_pk"]),
+            const SizedBox(height: 12),
+            const Text(
+              "Açıklama",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(log["description"] ?? "-"),
+            const SizedBox(height: 12),
+            Text(
+              "Tarih: ${log["created_at"]}",
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _detailRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text("$label: $value", style: const TextStyle(fontSize: 14)),
     );
   }
 
@@ -142,7 +188,11 @@ class _AdminLogsScreenState extends State<AdminLogsScreen> {
         };
 
       default:
-        return {"icon": Icons.info, "color": Colors.grey, "label": action};
+        return {
+          "icon": Icons.info_outline,
+          "color": Colors.grey,
+          "label": action,
+        };
     }
   }
 }

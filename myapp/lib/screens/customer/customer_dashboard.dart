@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'customer_profile.dart';
 import 'customer_monthly_usage.dart';
 import 'customer_trend.dart';
+import 'customer_campaigns_screen.dart';
 
 class CustomerDashboard extends StatelessWidget {
   final int userId;
@@ -16,11 +17,32 @@ class CustomerDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xfff4f6fb),
+
+      // 🔷 GRADYAN HEADER
       appBar: AppBar(
-        title: Text("Hoşgeldin, $username"),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xff6A11CB), Color(0xff8E2DE2)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: Text(
+          "Hoş geldin, $username",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white, // 👈 BURASI
+          ),
+        ),
+
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () {
               Navigator.pushReplacementNamed(context, "/login");
             },
@@ -28,13 +50,18 @@ class CustomerDashboard extends StatelessWidget {
         ],
       ),
 
+      // 🔷 DASHBOARD
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
+        child: GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
           children: [
-            DashboardButton(
+            _dashboardCard(
               title: "Profil Bilgilerim",
               icon: Icons.person,
+              color: Colors.deepPurple,
               onTap: () {
                 Navigator.push(
                   context,
@@ -45,9 +72,10 @@ class CustomerDashboard extends StatelessWidget {
               },
             ),
 
-            DashboardButton(
+            _dashboardCard(
               title: "Aylık İşlem Özeti",
               icon: Icons.bar_chart,
+              color: Colors.indigo,
               onTap: () {
                 Navigator.push(
                   context,
@@ -58,9 +86,10 @@ class CustomerDashboard extends StatelessWidget {
               },
             ),
 
-            DashboardButton(
+            _dashboardCard(
               title: "Trend Analizi",
               icon: Icons.timeline,
+              color: Colors.teal,
               onTap: () {
                 Navigator.push(
                   context,
@@ -71,12 +100,17 @@ class CustomerDashboard extends StatelessWidget {
               },
             ),
 
-            DashboardButton(
-              title: "Churn Tahmini (Risk Analizi)",
-              icon: Icons.warning_amber,
+            _dashboardCard(
+              title: "Kampanyalar",
+              icon: Icons.emoji_events,
+              color: Colors.orange,
               onTap: () {
-                // Prediction ekranını admin folder’dan alacağız
-                Navigator.pushNamed(context, "/prediction");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomerCampaignsScreen(userId: userId),
+                  ),
+                );
               },
             ),
           ],
@@ -84,33 +118,45 @@ class CustomerDashboard extends StatelessWidget {
       ),
     );
   }
-}
 
-class DashboardButton extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const DashboardButton({
-    Key? key,
-    required this.title,
-    required this.icon,
-    required this.onTap,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      margin: EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        leading: Icon(icon, size: 32, color: Colors.deepPurple),
-        title: Text(
-          title,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+  // 🔷 TEK BİR DASHBOARD KARTI
+  Widget _dashboardCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        trailing: Icon(Icons.arrow_forward_ios),
-        onTap: onTap,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: color.withOpacity(0.15),
+              child: Icon(icon, color: color, size: 30),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
     );
   }

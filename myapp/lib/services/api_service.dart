@@ -24,6 +24,18 @@ class ApiService {
     return _safeJson(response);
   }
 
+  static Future<Map<String, dynamic>> getCampaignResult(
+    int userId,
+    int campaignId,
+  ) async {
+    final res = await http.get(
+      Uri.parse(
+        "http://10.0.2.2:8000/api/customer_campaign/$userId/$campaignId/",
+      ),
+    );
+    return json.decode(res.body);
+  }
+
   // ------------------ CUSTOMER PROFILE ------------------ //
   static Future<Map<String, dynamic>> getCustomerProfile(int userId) async {
     final url = buildUri("customer_profile/$userId/");
@@ -46,16 +58,20 @@ class ApiService {
   }
 
   // ------------------ REGISTER ------------------ //
-  static Future<bool> register(Map<String, dynamic> data) async {
-    final url = buildUri("register/");
-
+  static Future<Map<String, dynamic>?> register(
+    Map<String, dynamic> data,
+  ) async {
     final response = await http.post(
-      url,
+      Uri.parse("$baseUrl/register/"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(data),
     );
 
-    return response.statusCode == 200;
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      return null;
+    }
   }
 
   // ------------------ TREND ------------------ //

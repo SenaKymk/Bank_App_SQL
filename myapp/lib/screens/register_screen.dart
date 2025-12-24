@@ -36,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final fullName =
         "${nameController.text.trim()} ${surnameController.text.trim()}";
 
-    final success = await ApiService.register({
+    final response = await ApiService.register({
       "username": fullName,
       "password": passwordController.text.trim(),
       "gender": gender!,
@@ -49,11 +49,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = false);
 
-    if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Kayıt başarılı!")));
-      Navigator.pop(context);
+    if (response != null && response["status"] == "success") {
+      final userId = response["user_id"];
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Kayıt Başarılı 🎉"),
+          content: Text(
+            "Kaydınız oluşturuldu.\n\n"
+            "Müşteri ID'niz:\n\n$userId\n\n"
+            "Lütfen giriş yaparken bu ID’yi kullanın.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // dialog
+                Navigator.pop(context); // register ekranı
+              },
+              child: const Text("Tamam"),
+            ),
+          ],
+        ),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Kayıt başarısız, tekrar deneyin.")),

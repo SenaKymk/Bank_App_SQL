@@ -8,63 +8,88 @@ class AdminDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff0f2f5),
+      backgroundColor: const Color(0xfff2f6fb),
       appBar: AppBar(
-        title: Text("Admin Paneli  — ID: $userId"),
-        backgroundColor: Colors.blueAccent,
+        title: const Text("Admin Paneli"),
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xff2196F3), Color(0xff21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: "Çıkış Yap",
+            onPressed: () => _logout(context),
+          ),
+        ],
       ),
 
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Yönetim Menüsü",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 6),
+                ],
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.grid_view, color: Colors.blueAccent),
+                  SizedBox(width: 8),
+                  Text(
+                    "Yönetim Menüsü",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ),
+
             const SizedBox(height: 20),
 
-            // --- MENÜ KUTULARI ---
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
+                childAspectRatio: 1.1, // 🔥 OVERFLOW FIX
                 children: [
                   _menuCard(
                     context,
                     icon: Icons.people,
-                    title: "Müşteri Listesi",
-                    onTap: () {
-                      Navigator.pushNamed(context, "/admin_user_detail");
-                    },
+                    title: "Müşteri\nListesi",
+                    onTap: () =>
+                        Navigator.pushNamed(context, "/admin_user_detail"),
                   ),
-
                   _menuCard(
                     context,
                     icon: Icons.insights,
-                    title: "Tahmin Ekranı",
-                    onTap: () {
-                      Navigator.pushNamed(context, "/admin_prediction");
-                    },
+                    title: "Tahmin\nEkranı",
+                    onTap: () =>
+                        Navigator.pushNamed(context, "/admin_prediction"),
                   ),
-
                   _menuCard(
                     context,
                     icon: Icons.history,
-                    title: "Log Kayıtları",
-                    onTap: () {
-                      Navigator.pushNamed(context, "/admin_logs");
-                    },
+                    title: "Log\nKayıtları",
+                    onTap: () => Navigator.pushNamed(context, "/admin_logs"),
                   ),
-
                   _menuCard(
                     context,
                     icon: Icons.settings,
-                    title: "Sistem Ayarları",
-                    onTap: () {},
+                    title: "Sistem\nAyarları",
+                    onTap: () => Navigator.pushNamed(context, "/admin_system"),
                   ),
                 ],
               ),
@@ -85,30 +110,45 @@ class AdminDashboard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            colors: [Colors.white, Color(0xfff7fbff)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 8,
-              offset: const Offset(0, 4),
+              offset: Offset(0, 4),
             ),
           ],
         ),
         padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 🔥 FIX
           children: [
-            Icon(icon, size: 48, color: Colors.blueAccent),
-            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xffe3f2fd),
+              ),
+              child: Icon(icon, size: 42, color: Colors.blueAccent),
+            ),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              maxLines: 2,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _logout(BuildContext context) {
+    Navigator.pushNamedAndRemoveUntil(context, "/login", (route) => false);
   }
 }

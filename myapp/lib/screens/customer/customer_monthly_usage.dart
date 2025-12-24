@@ -52,116 +52,163 @@ class _CustomerMonthlyUsageState extends State<CustomerMonthlyUsage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Aylık İşlem Özeti")),
+      backgroundColor: const Color.fromARGB(255, 248, 244, 251),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // ------------------ AY SEÇİCİ --------------------
-                    DropdownButton<String>(
-                      value: selectedMonth,
-                      isExpanded: true,
-                      onChanged: (value) {
-                        setState(() => selectedMonth = value);
-                        loadUsage();
-                      },
-                      items: months.map((m) {
-                        return DropdownMenuItem(
-                          value: m,
-                          child: Text(m, style: const TextStyle(fontSize: 18)),
-                        );
-                      }).toList(),
+          : Column(
+              children: [
+                // 🔮 MOR GRADYAN HEADER (PROFİL EKRANI İLE AYNI)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(
+                    top: 56,
+                    left: 10,
+                    right: 16,
+                    bottom: 24,
+                  ),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xff6A11CB), Color(0xff2575FC)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // ------------------ GRAFİK 1 --------------------
-                    const Text(
-                      "İşlem Sayıları (adet)",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(height: 220, child: LineChart(_countChart())),
-
-                    const SizedBox(height: 30),
-
-                    // ------------------ GRAFİK 2 --------------------
-                    const Text(
-                      "İşlem Tutarları (TL)",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          "Aylık İşlem Özeti",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(height: 220, child: BarChart(_amountChart())),
-
-                    const SizedBox(height: 30),
-
-                    // ------------------ ÖZET BİLGİ --------------------
-                    _infoCard(
-                      "Aktif Ürün Sayısı",
-                      usage?["active_product_category_nbr"]?.toString() ?? "0",
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+
+                // 📄 SAYFA İÇERİĞİ
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 🔽 AY SEÇİCİ
+                        DropdownButtonFormField<String>(
+                          value: selectedMonth,
+                          decoration: const InputDecoration(
+                            labelText: "Ay Seç",
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (value) {
+                            setState(() => selectedMonth = value);
+                            loadUsage();
+                          },
+                          items: months
+                              .map(
+                                (m) =>
+                                    DropdownMenuItem(value: m, child: Text(m)),
+                              )
+                              .toList(),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // 📝 YAZILI ÖZET
+                        _textSummary(),
+
+                        const SizedBox(height: 30),
+
+                        // 📊 GRAFİK 1
+                        const Text(
+                          "İşlem Sayıları Karşılaştırması",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 7),
+                        SizedBox(height: 220, child: BarChart(_countChart())),
+
+                        const SizedBox(height: 30),
+
+                        // 📊 GRAFİK 2
+                        const Text(
+                          "İşlem Tutarları Karşılaştırması (TL)",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(height: 220, child: BarChart(_amountChart())),
+
+                        const SizedBox(height: 30),
+
+                        // ℹ️ EK BİLGİ
+                        _infoCard(
+                          "Aktif Ürün Sayısı",
+                          usage?["active_product_category_nbr"]?.toString() ??
+                              "0",
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
 
-  // ----------------------- CHART 1 -----------------------
-  LineChartData _countChart() {
-    final eftCnt = _safeDouble(usage?["total_mobile_eft_cnt"]);
-    final ccCnt = _safeDouble(usage?["total_cc_cnt"]);
+  // 📝 METİNSEL ÖZET
+  Widget _textSummary() {
+    final eftCnt = _safeDouble(usage?["total_mobile_eft_cnt"]).toInt();
+    final ccCnt = _safeDouble(usage?["total_cc_cnt"]).toInt();
+    final eftAmt = _safeDouble(usage?["total_mobile_eft_amt"]);
+    final ccAmt = _safeDouble(usage?["total_cc_amt"]);
 
-    return LineChartData(
-      minX: 0,
-      maxX: 1,
-      minY: 0,
-      maxY: (eftCnt > ccCnt ? eftCnt : ccCnt) + 10,
-      lineBarsData: [
-        LineChartBarData(
-          isCurved: true,
-          color: Colors.blue,
-          barWidth: 3,
-          spots: [FlSpot(0, eftCnt), FlSpot(1, ccCnt)],
-        ),
-      ],
-      titlesData: FlTitlesData(
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            getTitlesWidget: _bottomTitlesCount,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "$selectedMonth Ayı İşlem Özeti",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-        ),
+          const SizedBox(height: 10),
+          Text("• EFT İşlem Sayısı: $eftCnt adet"),
+          Text("• Kart İşlem Sayısı: $ccCnt adet"),
+          const SizedBox(height: 6),
+          Text("• EFT Toplam Tutarı: ${eftAmt.toStringAsFixed(2)} TL"),
+          Text("• Kart Toplam Tutarı: ${ccAmt.toStringAsFixed(2)} TL"),
+        ],
       ),
     );
   }
 
-  Widget _bottomTitlesCount(double value, TitleMeta meta) {
-    switch (value.toInt()) {
-      case 0:
-        return const Text("EFT");
-      case 1:
-        return const Text("Kart");
-      default:
-        return const Text("");
-    }
-  }
-
-  // ----------------------- CHART 2 -----------------------
-  BarChartData _amountChart() {
-    final eftAmt = _safeDouble(usage?["total_mobile_eft_amt"]);
-    final ccAmt = _safeDouble(usage?["total_cc_amt"]);
-
-    final maxY = (eftAmt > ccAmt ? eftAmt : ccAmt) * 1.3 + 10;
+  // 📊 BAR CHART – İŞLEM SAYILARI
+  BarChartData _countChart() {
+    final eftCnt = _safeDouble(usage?["total_mobile_eft_cnt"]);
+    final ccCnt = _safeDouble(usage?["total_cc_cnt"]);
+    final maxY = (eftCnt > ccCnt ? eftCnt : ccCnt) + 5;
 
     return BarChartData(
       maxY: maxY,
@@ -169,13 +216,21 @@ class _CustomerMonthlyUsageState extends State<CustomerMonthlyUsage> {
         BarChartGroupData(
           x: 0,
           barRods: [
-            BarChartRodData(toY: eftAmt, color: Colors.green, width: 22),
+            BarChartRodData(
+              toY: eftCnt,
+              color: const Color.fromARGB(255, 79, 212, 221),
+              width: 26,
+            ),
           ],
         ),
         BarChartGroupData(
           x: 1,
           barRods: [
-            BarChartRodData(toY: ccAmt, color: Colors.orange, width: 22),
+            BarChartRodData(
+              toY: ccCnt,
+              color: const Color.fromARGB(255, 144, 45, 224),
+              width: 26,
+            ),
           ],
         ),
       ],
@@ -190,10 +245,52 @@ class _CustomerMonthlyUsageState extends State<CustomerMonthlyUsage> {
     );
   }
 
-  // ----------------------- INFO CARD -----------------------
+  // 📊 BAR CHART – İŞLEM TUTARLARI
+  BarChartData _amountChart() {
+    final eftAmt = _safeDouble(usage?["total_mobile_eft_amt"]);
+    final ccAmt = _safeDouble(usage?["total_cc_amt"]);
+    final maxY = (eftAmt > ccAmt ? eftAmt : ccAmt) * 1.2 + 10;
+
+    return BarChartData(
+      maxY: maxY,
+      barGroups: [
+        BarChartGroupData(
+          x: 0,
+          barRods: [
+            BarChartRodData(
+              toY: eftAmt,
+              color: const Color.fromARGB(255, 79, 212, 221),
+              width: 26,
+            ),
+          ],
+        ),
+        BarChartGroupData(
+          x: 1,
+          barRods: [
+            BarChartRodData(
+              toY: ccAmt,
+              color: const Color.fromARGB(255, 144, 45, 224),
+              width: 26,
+            ),
+          ],
+        ),
+      ],
+      titlesData: FlTitlesData(
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, _) => Text(value == 0 ? "EFT" : "Kart"),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ℹ️ INFO CARD
   Widget _infoCard(String title, String value) {
     return Card(
       elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -201,11 +298,11 @@ class _CustomerMonthlyUsageState extends State<CustomerMonthlyUsage> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             Text(
               value,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),

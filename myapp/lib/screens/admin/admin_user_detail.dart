@@ -149,7 +149,7 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> {
                 _editField("İl", provinceController),
                 _editField("Çalışma Tipi", workTypeController),
                 _editField("Sektör", workSectorController),
-                _editField("Kıdem (yıl)", tenureController),
+                _editField("Kıdem ", tenureController),
               ],
             ),
           ),
@@ -210,7 +210,7 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> {
             _infoRow("Din", profileData!["religion"]),
             _infoRow("Çalışma Tipi", profileData!["work_type"]),
             _infoRow("Sektör", profileData!["work_sector"]),
-            _infoRow("Kıdem", "${profileData!["tenure"]} yıl"),
+            _infoRow("Kıdem", "${profileData!["tenure"]} "),
             const SizedBox(height: 12),
 
             ElevatedButton.icon(
@@ -218,7 +218,7 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> {
               icon: const Icon(Icons.edit),
               label: const Text("Düzenle"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 127, 166, 235),
+                backgroundColor: const Color.fromARGB(255, 63, 160, 224),
                 minimumSize: const Size(double.infinity, 45),
               ),
             ),
@@ -257,8 +257,20 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Müşteri Detayları (Admin)"),
-        backgroundColor: Colors.blueAccent,
+        title: const Text("Müşteri Detayları "),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xff2196F3), // mavi
+                Color(0xff21CBF3), // açık mavi
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -266,7 +278,6 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // -------- MÜŞTERİ SEÇİM DROPDOWN --------
                   DropdownButtonFormField<int>(
                     decoration: const InputDecoration(
                       labelText: "Müşteri Seç",
@@ -284,10 +295,7 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> {
                       fetchProfile(value!);
                     },
                   ),
-
                   const SizedBox(height: 20),
-
-                  // -------- PROFİL KARTI --------
                   Expanded(child: _profileCard()),
                 ],
               ),

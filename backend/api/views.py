@@ -81,23 +81,80 @@ def login(request):
             "message": "Invalid credentials"
         }, status=400)
 
-@api_view(['GET'])
+@api_view(["GET"])
 def customer_trend(request, cust_id):
     try:
         summary = CustomerTimeSeriesSummary.objects.get(cust_id=cust_id)
+
         return Response({
-            "mobile_eft_trend": summary.mobile_eft_all_cnt_trend,
-            "cc_cnt_trend": summary.cc_transaction_all_cnt_trend,
-            "mobile_mean": summary.mobile_eft_all_amt_mean,
-            "cc_mean": summary.cc_transaction_all_amt_mean,
-            "months_inactive": summary.months_since_last_txn,
-            "product_last": summary.active_product_category_nbr_last,
-            "ratio": summary.mobile_to_card_ratio_amt,
-            "mobile_trend_3m": summary.mobile_eft_all_cnt_trend_3m,
-            "cc_trend_3m": summary.cc_transaction_all_cnt_trend_3m,
+            # --- ZAMAN / AKTİF ---
+            "months_since_last_txn": summary.months_since_last_txn,
+            "is_inactive_3m": summary.is_inactive_3m,
+            "active_product_category_nbr_last": summary.active_product_category_nbr_last,
+
+            # --- ORAN ---
+            "mobile_to_card_ratio_amt": summary.mobile_to_card_ratio_amt,
+
+            # --- 1 AYLIK TREND ---
+            "mobile_eft_all_cnt_trend": summary.mobile_eft_all_cnt_trend,
+            "cc_transaction_all_cnt_trend": summary.cc_transaction_all_cnt_trend,
+
+            # --- 3 AYLIK TREND ---
+            "mobile_eft_all_cnt_trend_3m": summary.mobile_eft_all_cnt_trend_3m,
+            "cc_transaction_all_cnt_trend_3m": summary.cc_transaction_all_cnt_trend_3m,
         })
+
     except CustomerTimeSeriesSummary.DoesNotExist:
         return Response({"error": "Trend data not found"}, status=404)
+    
+@api_view(["GET"])
+def customer_campaign_ranking(request, user_id, campaign_id):
+
+    if campaign_id == 1:
+        # EFT Şampiyonu
+        qs = (
+            CustomerActivity.objects
+            .values("cust_id")
+            .annotate(score=Sum("mobile_eft_all_amt"))
+            .order_by("-score")
+        )
+
+    elif campaign_id == 2:
+        # Ürün Ustası
+        qs = (
+            CustomerActivity.objects
+            .values("cust_id")
+            .annotate(score=Sum("active_product_category_nbr"))
+            .order_by("-score")
+        )
+
+    elif campaign_id == 3:
+        # En Aktif Müşteri
+        qs = (
+            CustomerActivity.objects
+            .values("cust_id")
+            .annotate(
+                score=Sum("mobile_eft_all_cnt") + Sum("cc_transaction_all_cnt")
+            )
+            .order_by("-score")
+        )
+    else:
+        return Response({"error": "Invalid campaign"}, status=400)
+
+    ranking = list(qs)
+    total = len(ranking)
+
+    rank = next(
+        (i + 1 for i, r in enumerate(ranking) if r["cust_id"] == user_id),
+        None
+    )
+
+    return Response({
+        "rank": rank,
+        "total": total,
+        "is_winner": rank == 1
+    })
+
 
         
 
@@ -418,10 +475,10 @@ def predict_churn(request, user_id):
     churn_prob = churn_model.predict_proba(X)[0][1]
     churn_pct = round(churn_prob *100, 2)
 
-    if churn_pct >= 60:
+    if churn_pct >= 15:
         risk = "HIGH"
         churn_label = 1
-    elif churn_pct >= 30:
+    elif churn_pct >= 5:
         risk = "MEDIUM"
         churn_label = 1
     else:
@@ -431,12 +488,23 @@ def predict_churn(request, user_id):
 
     ref_date = summary.ref_date
 
-    # --- Churn Label Update ---
-    CustomerChurnLabel.objects.update_or_create(
-        cust_id=user_id,
-        ref_date=ref_date,
-        defaults={"churn": churn_label}
-    )
+    existing = CustomerChurnLabel.objects.filter(cust_id=user_id).first()
+
+    if existing is None:
+        # KAYIT YOK → INSERT
+        CustomerChurnLabel.objects.create(
+            cust_id=user_id,
+            ref_date=ref_date,
+            churn=churn_label
+        )
+        db_action = "INSERT"
+    else:
+        # KAYIT VAR → UPDATE
+        existing.ref_date = ref_date
+        existing.churn = churn_label
+        existing.save()
+        db_action = "UPDATE"
+
 
     # --- Churn Request Log ---
     ChurnScoringRequests.objects.update_or_create(
@@ -460,4 +528,76 @@ def predict_churn(request, user_id):
         "ref_date": str(ref_date)
     })
 
+@api_view(["GET"])
+def admin_system_stats(request):
+    total_customers = Users.objects.filter(role="customer").count()
 
+    churn_yes = CustomerChurnLabel.objects.filter(
+        churn=1,
+        cust_id__in=Users.objects.filter(role="customer")
+        .values_list("user_id", flat=True)
+    ).count()
+
+    active_customers = Users.objects.filter(
+        role="customer"
+    ).exclude(
+        user_id__in=CustomerChurnLabel.objects.filter(churn=1)
+        .values_list("cust_id", flat=True)
+    ).count()
+
+    return Response({
+        "total_customers": total_customers,
+        "churn_yes": churn_yes,
+        "churn_no": active_customers,
+        "high_risk": churn_yes
+    })
+
+@api_view(["GET"])
+def admin_system_customers(request):
+    customer_type = request.GET.get("type", "all")
+
+    customers = Users.objects.filter(role="customer")
+
+    if customer_type == "churned":
+        customers = customers.filter(
+            user_id__in=CustomerChurnLabel.objects.filter(churn=1)
+            .values_list("cust_id", flat=True)
+        )
+
+    elif customer_type == "active":
+        customers = customers.exclude(
+            user_id__in=CustomerChurnLabel.objects.filter(churn=1)
+            .values_list("cust_id", flat=True)
+        )
+
+    data = [
+        {
+            "id": u.user_id,
+            "name": u.username,
+        }
+        for u in customers
+    ]
+
+    return Response(data)
+
+
+@api_view(["GET"])
+def customer_campaigns(request, user_id):
+    campaigns = [
+        {
+            "campaign_id": 1,
+            "title": "En Çok EFT Harcayanlar",
+            "description": "Toplam EFT tutarına göre sıralama",
+        },
+        {
+            "campaign_id": 2,
+            "title": "En Çok Ürün Kullananlar",
+            "description": "Aktif ürün sayısına göre sıralama",
+        },
+        {
+            "campaign_id": 3,
+            "title": "En Aktif Müşteriler",
+            "description": "Son 3 ay işlem sayısına göre",
+        },
+    ]
+    return Response(campaigns)

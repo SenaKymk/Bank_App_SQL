@@ -60,14 +60,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       updated,
     );
 
-    if (success) {
+    if (success && mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Profil güncellendi")));
-
-      setState(() {
-        editing = false;
-      });
+      ).showSnackBar(const SnackBar(content: Text("Profil güncellendi")));
+      setState(() => editing = false);
     }
   }
 
@@ -76,14 +73,28 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     TextEditingController ctrl, {
     bool number = false,
   }) {
-    return TextField(
-      controller: ctrl,
-      enabled: editing,
-      keyboardType: number ? TextInputType.number : TextInputType.text,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(),
-        suffixIcon: editing ? Icon(Icons.edit) : null,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 4)),
+        ],
+      ),
+      child: TextField(
+        controller: ctrl,
+        enabled: editing,
+        keyboardType: number ? TextInputType.number : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: label,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          suffixIcon: editing ? const Icon(Icons.edit) : null,
+        ),
       ),
     );
   }
@@ -91,47 +102,87 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Profilim"),
-        actions: [
-          IconButton(
-            icon: Icon(editing ? Icons.check : Icons.edit),
-            onPressed: () {
-              if (editing) {
-                saveProfile();
-              } else {
-                setState(() => editing = true);
-              }
-            },
-          ),
-        ],
-      ),
-
+      backgroundColor: const Color(0xfff4f6fb),
       body: loading
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: EdgeInsets.all(20),
-              child: ListView(
-                children: [
-                  buildField("Cinsiyet", genderCtrl),
-                  SizedBox(height: 15),
-                  buildField("Yaş", ageCtrl, number: true),
-                  SizedBox(height: 15),
-                  buildField("Şehir", provinceCtrl),
-                  SizedBox(height: 15),
-                  buildField("Din", religionCtrl),
-                  SizedBox(height: 15),
-                  buildField("Meslek Türü", workTypeCtrl),
-                  SizedBox(height: 15),
-                  buildField("Meslek Sektörü", workSectorCtrl),
-                  SizedBox(height: 15),
-                  buildField(
-                    "Bankada Kalma Süresi (Tenure)",
-                    tenureCtrl,
-                    number: true,
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // 🔷 GRADYAN HEADER
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(
+                    top: 60,
+                    left: 20,
+                    right: 20,
+                    bottom: 24,
                   ),
-                ],
-              ),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xff6A11CB), Color(0xff2575FC)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          "Profilim",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          editing ? Icons.check_circle : Icons.edit,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          if (editing) {
+                            saveProfile();
+                          } else {
+                            setState(() => editing = true);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 🔷 FORM ALANI
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: ListView(
+                      children: [
+                        buildField("Cinsiyet", genderCtrl),
+                        buildField("Yaş", ageCtrl, number: true),
+                        buildField("Şehir", provinceCtrl),
+                        buildField("Din", religionCtrl),
+                        buildField("Meslek Türü", workTypeCtrl),
+                        buildField("Meslek Sektörü", workSectorCtrl),
+                        buildField(
+                          "Bankada Kalma Süresi (Tenure)",
+                          tenureCtrl,
+                          number: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }

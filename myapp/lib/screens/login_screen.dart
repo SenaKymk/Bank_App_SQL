@@ -51,21 +51,17 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             MaterialPageRoute(builder: (_) => AdminDashboard(userId: id)),
           );
-        } else if (role == 'customer') {
+        } else {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (_) => CustomerDashboard(userId: id, username: username),
             ),
           );
-        } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Bilinmeyen rol tipi")));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Hatalı kullanıcı ID veya şifre')),
+          const SnackBar(content: Text("Hatalı kullanıcı ID veya şifre")),
         );
       }
     } catch (e) {
@@ -80,66 +76,144 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff0f2f5),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Center(
-          child: SingleChildScrollView(
+      backgroundColor: const Color(0xfff4f6fb),
+      body: Column(
+        children: [
+          // 🔷 GRADYAN HEADER (ADMIN PANEL DİLİ)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 90, bottom: 36),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xff2196F3), Color(0xff21CBF3)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(36),
+                bottomRight: Radius.circular(36),
+              ),
+            ),
             child: Column(
-              children: [
-                const Text(
-                  'Churn Predictor',
+              children: const [
+                Icon(
+                  Icons.account_balance_rounded,
+                  size: 60,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 14),
+                Text(
+                  "Banka Mobil Uygulaması",
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 30),
-                TextField(
-                  controller: userIdController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Kullanıcı ID',
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Şifre',
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                ),
-                const SizedBox(height: 25),
-
-                isLoading
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: loginUser,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: const Text('Giriş Yap'),
-                      ),
-
-                const SizedBox(height: 20),
-
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                    );
-                  },
-                  child: const Text('Hesabın yok mu? Kayıt Ol'),
+                SizedBox(height: 6),
+                Text(
+                  "Müşteri Yönetimi & Risk Analizi",
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
               ],
             ),
           ),
-        ),
+
+          // 🔷 FORM ALANI
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+
+                    TextField(
+                      controller: userIdController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Kullanıcı ID',
+                        prefixIcon: const Icon(Icons.person),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Şifre',
+                        prefixIcon: const Icon(Icons.lock),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // 🔷 BUTON (FONKSİYON AYNI)
+                    isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: loginUser,
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 52),
+                              backgroundColor: const Color(0xff2196F3),
+                              foregroundColor: Colors.white,
+                              elevation: 6,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text(
+                              "Giriş Yap",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+
+                    const SizedBox(height: 18),
+
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Hesabın yok mu? Kayıt Ol",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    const Text(
+                      "Powered by Pınar & Sena",
+                      style: TextStyle(fontSize: 12, color: Colors.black38),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
