@@ -1,0 +1,168 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Customer Directory{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Customers</li>
+{% endblock %}
+
+{% block page_title %}Customer Directory{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'export_report' %}" class="btn btn-outline-secondary shadow-sm rounded-3">
+    <i class="bi bi-download me-2"></i> Export CSV
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="get">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Search Records</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="q" class="form-control bg-light border-0" 
+                               placeholder="ID, Province, or Sector..." value="{{ search_query|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Risk Category</label>
+                    <select name="risk" class="form-select bg-light border-0">
+                        <option value="">All Risk Levels</option>
+                        <option value="High" {% if risk_filter == "High" %}selected{% endif %}>High Risk</option>
+                        <option value="Medium" {% if risk_filter == "Medium" %}selected{% endif %}>Medium Risk</option>
+                        <option value="Low" {% if risk_filter == "Low" %}selected{% endif %}>Low Risk</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                            Apply Filters
+                        </button>
+                        <a href="{% url 'customer_list' %}" class="btn btn-light border" title="Reset">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold">
+            {% if search_query or risk_filter %}
+                Search Results <span class="badge bg-primary ms-2">{{ total_count }}</span>
+            {% else %}
+                All Customers <span class="badge bg-secondary ms-2">{{ total_count }}</span>
+            {% endif %}
+        </h6>
+    </div>
+
+    <div class="table-responsive">
+        {% if customers %}
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4 border-0">Customer ID</th>
+                    <th class="border-0">Demographics</th>
+                    <th class="border-0">Location</th>
+                    <th class="border-0">Tenure</th>
+                    <th class="border-0">Sector</th>
+                    <th class="border-0">Risk Status</th>
+                    <th class="text-end pe-4 border-0">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-xs me-2 bg-primary bg-opacity-10 text-primary rounded px-2 py-1 small fw-bold">
+                                #{{ c.cust_id|stringformat:"s"|slice:"-2:" }}
+                            </div>
+                            <span class="fw-bold text-dark">#{{ c.cust_id }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="small">
+                            <span class="text-dark fw-medium">{{ c.age }} yrs</span>
+                            <span class="text-muted mx-1">•</span>
+                            <span class="text-muted">{{ c.gender }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="small text-dark"><i class="bi bi-geo-alt me-1 text-muted"></i>{{ c.province }}</span>
+                    </td>
+                    <td><span class="badge bg-light text-dark fw-normal">{{ c.tenure }} Months</span></td>
+                    <td><span class="small text-muted fw-medium">{{ c.work_sector }}</span></td>
+                    <td>
+                        {% if c.churn_risk == "High" %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3">High</span>
+                        {% elif c.churn_risk == "Medium" %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3">Medium</span>
+                        {% else %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3">Low</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'customer_detail' c.cust_id %}" class="btn btn-sm btn-light border shadow-sm rounded-circle">
+                            <i class="bi bi-eye text-primary"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-5">
+            <div class="avatar-lg bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                <i class="bi bi-search fs-2 text-muted"></i>
+            </div>
+            <h5 class="fw-bold">No matching records</h5>
+            <p class="text-muted small">Try adjusting your filters or search terms.</p>
+            <a href="{% url 'customer_list' %}" class="btn btn-primary btn-sm rounded-pill px-4">Clear All Filters</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if customers.has_other_pages %}
+    <div class="card-footer bg-white border-top py-3">
+        <nav>
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% if customers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link border-0 shadow-none text-primary" 
+                       href="?page={{ customers.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if risk_filter %}&risk={{ risk_filter }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                <li class="page-item active mx-2">
+                    <span class="page-link rounded-pill px-3 bg-primary border-0">
+                        Page {{ customers.number }} of {{ customers.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if customers.has_next %}
+                <li class="page-item">
+                    <a class="page-link border-0 shadow-none text-primary" 
+                       href="?page={{ customers.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if risk_filter %}&risk={{ risk_filter }}{% endif %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,19 +1,23 @@
 # Python
 __pycache__/
 *.pyc
+
+# Virtualenv
 venv/
-.env
+.env/
 
-# Flutter / Dart
-build/
-.dart_tool/
+# Django
+db.sqlite3
 
-# macOS
-.DS_Store
+# ML / Data
+*.cbm
+*.pkl
+*.joblib
 
-# Editor
+# IDE
 .vscode/
 .idea/
 
-# Model dosyaları (opsiyonel)
-*.cbm
+# OS
+.DS_Store
+Thumbs.db

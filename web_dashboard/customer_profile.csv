@@ -1,0 +1,55 @@
+cust_id,gender,age,province,religion,work_type,work_sector,tenure
+1,F,57,ZUI,O,Full-time,Finance,65
+2,F,62,NOB,M,Self-employed,Healthcare,224
+3,F,22,ZUI,C,Student,,47
+4,F,18,ANK,C,Student,none,55
+5,M,27,ZUI,U,Full-time,Finance,108
+6,F,40,NOH,U,Unemployed,,187
+7,F,64,GEL,U,Part-time,Public Sector,218
+8,F,35,ZUI,J,Part-time,Retail,184
+9,M,52,GRO,C,Full-time,Healthcare,216
+10,F,31,FLE,M,Full-time,Manufacturing,156
+11,F,26,ZUI,U,Full-time,Finance,64
+12,M,60,NOB,O,Unemployed,,197
+13,F,55,FLE,J,Part-time,Manufacturing,113
+14,F,45,NOH,U,Part-time,Public Sector,263
+15,M,63,LIM,U,Full-time,Public Sector,70
+16,M,35,ZUI,U,Full-time,Healthcare,22
+17,F,53,NOH,U,Full-time,Healthcare,92
+18,F,52,NOH,C,Full-time,Public Sector,114
+19,M,56,NOB,C,Self-employed,Manufacturing,243
+20,F,42,GRO,U,Part-time,Healthcare,55
+21,M,58,NOH,C,Part-time,Education,206
+22,M,29,NOB,U,Full-time,Manufacturing,25
+23,M,38,ZUI,U,Unemployed,,186
+24,M,54,ZUI,U,Self-employed,Manufacturing,36
+25,M,44,FRI,C,Part-time,Retail,228
+26,M,22,GRO,M,Part-time,Retail,39
+27,F,56,NOH,U,Part-time,Education,142
+28,M,40,GEL,C,Full-time,Technology,239
+29,M,27,ZUI,U,Full-time,Finance,108
+30,M,63,FRI,C,Full-time,Education,101
+31,F,63,NOB,U,Part-time,Education,251
+32,F,39,DRE,C,Part-time,Public Sector,163
+33,M,57,ZUI,U,Unemployed,,226
+34,F,43,ZUI,U,Full-time,Manufacturing,203
+35,F,23,NOB,O,Full-time,Healthcare,28
+36,F,30,NOB,O,Full-time,Finance,65
+37,F,53,FRI,J,Full-time,Education,240
+38,M,34,NOB,U,Full-time,Education,155
+39,M,59,FLE,U,Part-time,Education,46
+40,M,60,NOH,C,Full-time,Healthcare,113
+41,M,27,ZUI,U,Full-time,Finance,108
+42,F,27,ZUI,U,Full-time,Finance,108
+43,M,62,GEL,C,Part-time,Retail,229
+44,F,53,NOB,U,Full-time,Education,186
+45,M,62,NOB,C,Self-employed,Healthcare,253
+46,M,28,FLE,U,Part-time,Education,120
+47,M,49,ZUI,O,Full-time,Retail,170
+48,M,27,ZUI,U,Full-time,Finance,108
+49,F,55,GEL,U,Part-time,Retail,202
+50,M,54,ZUI,C,Part-time,Retail,40
+51,M,31,FRI,U,Full-time,Technology,155
+52,F,27,UTR,C,Full-time,Manufacturing,108
+53,F,41,ZUI,C,Part-time,Healthcare,59
+54,F,64,LIM,U,Full-time,Finance,217
